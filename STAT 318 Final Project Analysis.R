@@ -132,3 +132,19 @@ print("Cp avg root mean square error: "); mean(Cp.results) # 0.7767489
 print("both avg root mean square error: "); mean(both.results) # 0.7780489
 
 # The lowest RMSE is from the R2 model meaning that we will choose that model to continue forward with. 
+final.mod = lm(HappinessScore~GDI+LifeExDiff+FemaleParliament+MaternalMort+SchoolingDiff+EmployDiscrimination)  
+
+# --------------------------------------------------------------
+##  OUTLIERS, LEVERAGE, AND INFLUENTIAL POINTS
+# Diagnostic plots to identify outliers/influential points
+par(mfrow=c(2,2))
+plot(final.mod)
+
+# Remove influential points
+equality.dat.trim = equality.dat[-c(1,18,27,112,116),]
+
+# Refit model
+refit.mod = lm(HappinessScore~GDI+LifeExDiff+FemaleParliament+MaternalMort+
+                 SchoolingDiff+EmployDiscrimination, dat = equality.dat.trim)
+
+summary(refit.mod)
