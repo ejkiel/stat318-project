@@ -13,6 +13,11 @@ equality.mod = lm(HappinessScore~GDI+LifeExDiff+FemaleParliament+MaternalMort+Sc
 summary(equality.mod)
 
 # --------------------------------------------------------------
+## CHECK FOR MULTI-COLLINEARITY
+library('car')
+vif(equality.mod)
+
+# --------------------------------------------------------------
 ## CHECK LINEAR REGRESSION ASSUMPTIONS
 
 # Linear Regression Assumptions
