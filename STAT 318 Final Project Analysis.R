@@ -4,32 +4,40 @@
 # --------------------------------------------------------------
 ## LOAD DATA & FIT FULL MODEL
 
-equality.dat = read.csv('C:/Users/eliza/stat318-git/stat318-project/FinalData.csv')
+equality.dat = read.csv('/Users/toristiegman/Documents/Wellesley/2022-2023/spring2023/stat318/project/finalProject.csv')
 equality.dat$EmployDiscrimination = as.factor(equality.dat$EmployDiscrimination)
 attach(equality.dat)
 
 # Full model
-equality.mod = lm(HappinessScore~GDI+LifeExDiff+FemaleParliament+MaternalMort+SchoolingDiff+EmployDiscrimination)
-summary(equality.mod)
+equality.mod.noLog = lm(HappinessScore~GDI+LifeExDiff+FemaleParliament+MaternalMort+SchoolingDiff+EmployDiscrimination)
+summary(equality.mod.noLog)
 
 # --------------------------------------------------------------
 ## CHECK FOR MULTI-COLLINEARITY
 library('car')
 vif(equality.mod)
 
+# No values are above 10 -> no multicolinearity!
+
 # --------------------------------------------------------------
 ## CHECK LINEAR REGRESSION ASSUMPTIONS
 
 # Linear Regression Assumptions
-par(mfrow=c(3,2))
+par(mfrow=c(4,2))
 
 # 1) Linearity of response
 plot(x=GDI, y=HappinessScore)
 plot(x=LifeExDiff, y=HappinessScore)
 plot(x=FemaleParliament, y=HappinessScore)
-plot(x=MaternalMort, y=HappinessScore)
+plot(x=MaternalMort, y=HappinessScore) # not linear... log it!
+plot(x=log(MaternalMort), y=HappinessScore)
 plot(x=SchoolingDiff, y=HappinessScore)
 plot(x=EmployDiscrimination, y=HappinessScore)
+
+# refit equality.mod to reflect logging maternal mortality
+equality.mod = lm(HappinessScore~GDI+LifeExDiff+FemaleParliament+log(MaternalMort)+SchoolingDiff+EmployDiscrimination)
+summary(equality.mod)
+
 
 # 2) Independence of error
 
@@ -55,7 +63,7 @@ abline(h=0, col='red')
 library(leaps)
 
 # Create explanatory and response variables
-x = cbind(GDI,LifeExDiff,FemaleParliament,MaternalMort,SchoolingDiff,EmployDiscrimination)
+x = cbind(GDI,LifeExDiff,FemaleParliament,log(MaternalMort),SchoolingDiff,EmployDiscrimination)
 y = HappinessScore
 
 # Subjective procedures
@@ -73,7 +81,7 @@ max_adjr2 = which.max(results_adjr2$adjr2)
 results_adjr2$which[max_adjr2,]
 
 # Step-wise Regression
-step(equality.mod, direction="both")
+step.mod = step(equality.mod, direction="both")
 summary(step.mod)
 
 ## ----- nLOOCV to choose a model ----- ##
@@ -97,10 +105,10 @@ for(i in 1:k){
   validate = equality.dat[folds[[i]],] 		# test data
   
   # Fit the four models on training set
-  R2.fitmod = lm(HappinessScore~GDI+LifeExDiff+FemaleParliament+MaternalMort+SchoolingDiff+EmployDiscrimination)  
-  adjR2.fitmod = lm(HappinessScore~GDI+LifeExDiff+FemaleParliament+MaternalMort+SchoolingDiff)  
-  Cp.fitmod = lm(HappinessScore~GDI+LifeExDiff+MaternalMort+SchoolingDiff+EmployDiscrimination)
-  both.fitmod = lm(HappinessScore ~ GDI + LifeExDiff + MaternalMort + SchoolingDiff)
+  R2.fitmod = lm(HappinessScore ~ GDI + LifeExDiff + FemaleParliament + log(MaternalMort) + SchoolingDiff + EmployDiscrimination)  
+  adjR2.fitmod = lm(HappinessScore ~ GDI + LifeExDiff + FemaleParliament + log(MaternalMort) + SchoolingDiff)  
+  Cp.fitmod = lm(HappinessScore ~ GDI + LifeExDiff + log(MaternalMort) + SchoolingDiff + EmployDiscrimination)
+  both.fitmod = lm(HappinessScore ~ GDI + LifeExDiff + log(MaternalMort) + SchoolingDiff)
   
   # Make predictions using validation set (predict() function)
   R2.predictions = predict(R2.fitmod, newdata = validate)
@@ -131,13 +139,13 @@ for(i in 1:k){
 } 
 
 # Calculate the average root mean squared error
-print("R2 avg root mean square error: " ); mean(R2.results) # 0.7721993
-print("adjR2 avg root mean square error: "); mean(adjR2.results) # 0.77281
-print("Cp avg root mean square error: "); mean(Cp.results) # 0.7767489
-print("both avg root mean square error: "); mean(both.results) # 0.7780489
+print("R2 avg root mean square error: " ); mean(R2.results) # 0.6546928
+print("adjR2 avg root mean square error: "); mean(adjR2.results) # 0.654709
+print("Cp avg root mean square error: "); mean(Cp.results) # 0.6604927
+print("both avg root mean square error: "); mean(both.results) # 0.6605547
 
 # The lowest RMSE is from the R2 model meaning that we will choose that model to continue forward with. 
-final.mod = lm(HappinessScore~GDI+LifeExDiff+FemaleParliament+MaternalMort+SchoolingDiff+EmployDiscrimination)  
+final.mod = lm(HappinessScore ~ GDI + LifeExDiff + FemaleParliament + log(MaternalMort) + SchoolingDiff + EmployDiscrimination)    
 
 # --------------------------------------------------------------
 ##  OUTLIERS, LEVERAGE, AND INFLUENTIAL POINTS
@@ -146,7 +154,7 @@ par(mfrow=c(2,2))
 plot(final.mod)
 
 # Remove influential points
-equality.dat.trim = equality.dat[-c(1,18,27,112,116),]
+equality.dat.trim = equality.dat[-c(1, 2, 22, 112),]
 
 # Refit model
 refit.mod = lm(HappinessScore~GDI+LifeExDiff+FemaleParliament+MaternalMort+
