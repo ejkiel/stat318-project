@@ -157,7 +157,7 @@ plot(final.mod)
 equality.dat.trim = equality.dat[-c(1, 2, 22, 112),]
 
 # Refit model
-refit.mod = lm(HappinessScore~GDI+LifeExDiff+FemaleParliament+MaternalMort+
-                 SchoolingDiff+EmployDiscrimination, dat = equality.dat.trim)
+refit.mod = lm(HappinessScore~ GDI + LifeExDiff + FemaleParliament + log(MaternalMort) +
+                 SchoolingDiff + EmployDiscrimination, dat = equality.dat.trim)
 
 summary(refit.mod)
